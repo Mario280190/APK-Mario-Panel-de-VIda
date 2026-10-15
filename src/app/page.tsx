@@ -1,21 +1,11 @@
-"use client";
-import { useState } from 'react';
-const sections = ['Hoy', 'Agenda', 'Contratos', 'Finanzas', 'Avisos'] as const;
-type Section = typeof sections[number];
-const initialTasks = [{id:1, text:'Revisar las fechas de tu primer contrato', done:false}, {id:2, text:'Conectar tu calendario personal', done:false}, {id:3, text:'Elegir cuándo recibir los avisos', done:false}];
-export default function Home() {
- const [section,setSection]=useState<Section>('Hoy');
- const [tasks,setTasks]=useState(initialTasks);
- const [newTask,setNewTask]=useState('');
- return <div className="shell">
- <aside><a className="brand" href="/">◈ <span>panel de vida<small>EL ESPACIO DE MARIO</small></span></a><nav aria-label="Principal">{sections.map((s,i)=><button key={s} className={s===section?'active':''} onClick={()=>setSection(s)}><span aria-hidden="true">{['◉','▦','▤','↗','♧'][i]}</span>{s}</button>)}</nav><div className="aside-bottom"><span className="avatar">M</span><div>Mario<small>Tu espacio personal</small></div></div></aside>
- <main><header><span>MI ESPACIO / {section.toUpperCase()}</span><span className="pill">Vista de ejemplo</span></header>
- <div className="heading"><div><p className="eyebrow">UN POCO DE ORDEN, MÁS TRANQUILIDAD</p><h1>{section==='Hoy'?'Todo lo importante, a mano.':section}</h1><p className="muted">{section==='Hoy'?'Tu día, tus próximos pasos y las decisiones que no quieres olvidar.':'Un lugar para tenerlo todo bajo control.'}</p></div><span className="heading-mark" aria-hidden="true">✳</span></div>
- <div className="notice"><span>◌</span><p><strong>Estamos construyendo tu panel.</strong> Los datos de esta pantalla son de ejemplo. Todavía no hay cuentas conectadas ni avisos activos.</p></div>
- {section==='Hoy'&&<><div className="stats"><article><small>EN TU AGENDA</small><strong>—</strong><p>Pendiente de conectar calendario</p></article><article><small>CONTRATOS GUARDADOS</small><strong>0</strong><p>Tu tranquilidad empieza aquí</p></article><article><small>PRÓXIMOS AVISOS</small><strong>0</strong><p>Sin recordatorios programados</p></article></div><div className="grid"><section className="card tasks"><div className="card-title"><h2>Tus próximos pasos</h2><span className="tag">Primeros pasos</span></div><p className="muted">Una cosa cada vez.</p>{tasks.map(t=><label className={t.done?'task done':'task'} key={t.id}><input type="checkbox" checked={t.done} onChange={()=>setTasks(tasks.map(x=>x.id===t.id?{...x,done:!x.done}:x))}/><span>{t.text}</span></label>)}<form onSubmit={e=>{e.preventDefault();if(newTask.trim()){setTasks([...tasks,{id:Date.now(),text:newTask.trim(),done:false}]);setNewTask('');}}}><input aria-label="Nueva tarea" value={newTask} onChange={e=>setNewTask(e.target.value)} placeholder="Añade un próximo paso…" maxLength={160}/><button className="primary">Añadir</button></form><small className="muted">Prueba temporal: las tareas se reinician al recargar.</small></section><section className="card green"><span className="eyebrow">TU CENTRO DE CONTRATOS</span><h2>Que ninguna fecha<br/>te pille por sorpresa.</h2><p>Pagos, renovaciones y plazos de baja, juntos y con el documento a mano.</p><button onClick={()=>setSection('Contratos')}>Ver mis contratos <span>↗</span></button><div className="mini-roadmap"><span>Documento</span><i/><span>Revisión</span><i/><span>Aviso</span></div></section></div><div className="connections"><h2>Tu vida, conectada</h2><div className="connection-grid">{['Agenda y cumpleaños','Correo y tareas','Tiempo en Getafe','Fondos e inversiones'].map(s=><article key={s}><span className="dot"/><h3>{s}</h3><small>Pendiente de configurar</small></article>)}</div></div></>}
- {section==='Agenda'&&<section className="card empty"><span className="empty-icon">▦</span><h2>Tu agenda empieza aquí</h2><p>Reuniremos citas, cumpleaños y vencimientos. La conexión con Google Calendar se configurará en una próxima etapa.</p><span className="tag">Sin calendario conectado</span></section>}
- {section==='Contratos'&&<section className="card empty"><span className="empty-icon">▤</span><h2>Un lugar para todos tus contratos</h2><p>Primero conectaremos el almacenamiento privado. Después podrás subir PDF, revisar la información extraída y programar avisos.</p><ol className="steps"><li>Subir documento</li><li>Confirmar fechas y condiciones</li><li>Crear recordatorios</li></ol><span className="tag">Subida de documentos todavía no disponible</span></section>}
- {section==='Finanzas'&&<section className="card empty"><span className="empty-icon">↗</span><h2>Tus finanzas, con perspectiva</h2><p>Aquí aparecerán tus fondos y gastos recurrentes, con la fecha de su última actualización. No hay datos financieros conectados.</p><span className="tag">Sin valoraciones disponibles</span></section>}
- {section==='Avisos'&&<section className="card empty"><span className="empty-icon">♧</span><h2>Avisos que te dejan tiempo para decidir</h2><p>Configuraremos recordatorios de pagos, renovaciones y plazos de baja. Aquí podrás consultar su estado y el historial de envíos.</p><span className="tag">Los avisos todavía no están activos</span></section>}
- <footer>Panel de vida · Hecho para tener más tiempo para lo demás.<span>Primera versión · 0.1</span></footer></main></div>;
+import { redirect } from 'next/navigation';
+import Dashboard from '@/components/dashboard';
+import { createClient } from '@/lib/supabase/server';
+export const dynamic = 'force-dynamic';
+export default async function Home() {
+  const supabase = await createClient();
+  if (!supabase) redirect('/login');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+  return <Dashboard email={user.email ?? 'Cuenta personal'} />;
 }
